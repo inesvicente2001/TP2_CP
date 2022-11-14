@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <omp.h>
 #include "../include/k_means.h"
 
 #define N 10000000
+//#define N 1000
 #define K 4
 
 void init_vector(struct point point[N]) {
@@ -34,57 +36,71 @@ void init_k_clusters(struct point point[N], struct cluster cluster[K]) {
 bool atribute_sample(int clN[K], struct point point[N], struct cluster cluster[K]) {
     
     size_t i;
-    short int j;
+    //short int j;
     /*variáveis que vão guardar elementos dos arrays e structs para evitar acessos à memória*/
-    float pointix, clusterjx, pointiy, clusterjy;
+    //float pointix, clusterjx, pointiy, clusterjy;
     /*
     clx = array que vai ter a soma de todas as coordenadas x pertencentes a um determinado cluster
     cly = array que vai ter a soma de todas as coordenadas y pertencentes a um determinado cluster
     clN = array que vai ter o número total de elementos em cada cluster
     */
     float clx[K], cly[K];
-    float minor_dist, dist;
-    short int minor_cluster;
+    int clNtmp[K];
+    //float minor_dist, dist;
+    //short int minor_cluster=0;
     /*bool que diz se houve algum elemento que tenha trocado de cluster*/
     bool end = true;
 
     for (i = 0 ; i < K ; i++) {
-        clN[i] = 0;
+        clNtmp[i] = 0;
         clx[i] = 0;
         cly[i] = 0;
     }
 
+    #pragma omp parallel for reduction (+: clNtmp, clx, cly)
     for (i = 0; i < N; i++) {
+
+        float minor_dist, dist;
+        short int minor_cluster;
         
-        pointix = point[i].x;
-        pointiy = point[i].y;
-        clusterjx = cluster[0].x;
-        clusterjy = cluster[0].y;
+        //pointix = point[i].x;
+        //pointiy = point[i].y;
+        //clusterjx = cluster[0].x;
+        //clusterjy = cluster[0].y;
         /*cálculo da distância inicial fora do loop para termos um valor inicial para o minor_dist e minor_cluster*/
-        minor_dist = (pointix - clusterjx) * (pointix - clusterjx) + (pointiy - clusterjy) * (pointiy - clusterjy);
+        //minor_dist = (pointix - clusterjx) * (pointix - clusterjx) + (pointiy - clusterjy) * (pointiy - clusterjy);
+        //minor_cluster = 0;
+        minor_dist = (point[i].x - cluster[0].x) * (point[i].x - cluster[0].x) + (point[i].y - cluster[0].y) * (point[i].y - cluster[0].y);
         minor_cluster = 0;
+        short int j;
         for (j = 1; j < K; j++) {
-            clusterjx = cluster[j].x;
-            clusterjy = cluster[j].y;
-            dist = (pointix - clusterjx) * (pointix - clusterjx) + (pointiy - clusterjy) * (pointiy - clusterjy);
+            //clusterjx = cluster[j].x;
+            //clusterjy = cluster[j].y;
+            dist = (point[i].x - cluster[j].x) * (point[i].x - cluster[j].x) + (point[i].y - cluster[j].y) * (point[i].y - cluster[j].y);
             if(dist < minor_dist){
                 minor_dist = dist;
                 minor_cluster = j;
             }
         }
-        clN[minor_cluster]++;
-        clx[minor_cluster] += pointix;
-        cly[minor_cluster] += pointiy;
+
+        //#pragma omp reduction (+: clN[minor_cluster], clx[minor_cluster], cly[minor_cluster])
+        clNtmp[minor_cluster]++;
+        clx[minor_cluster] += point[i].x;
+        cly[minor_cluster] += point[i].y;
 
         /*Caso haja algum ponto que tenha trocado de cluster o bool end passa a false e haverá outra iteração desta função*/
         if (point[i].cluster != minor_cluster) {
             end = false;
             point[i].cluster = minor_cluster;
         }
+
+
+        //printf("%ld   %d\n",i,omp_get_thread_num());
     }
 
     /*cálculo do centroide de cada cluster*/
     for (i = 0 ; i < K ; i++) {
+        clN[i] = clNtmp[i];
         cluster[i].x = clx[i] / (float)clN[i];
         cluster[i].y = cly[i] / (float)clN[i];
     }
