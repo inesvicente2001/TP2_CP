@@ -57,7 +57,7 @@ bool atribute_sample(int clN[K], struct point point[N], struct cluster cluster[K
         cly[i] = 0;
     }
 
-    #pragma omp parallel for reduction (+: clNtmp, clx, cly)
+    #pragma omp parallel for reduction (+: clNtmp, clx, cly) schedule(guided)
     for (i = 0; i < N; i++) {
 
         float minor_dist, dist;
@@ -125,7 +125,7 @@ int main() {
     bool end = 0; /*flag que indica se já convergiu*/
     size_t iterations = 0; /*número de iterações*/
 
-    while (!end) {
+    while (!end && iterations < 20) {
         end = atribute_sample(clN, point, cluster);
         if (!end) iterations++;
     }
