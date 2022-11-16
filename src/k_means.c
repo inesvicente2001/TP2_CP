@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>
 #include <omp.h>
 #include "../include/k_means.h"
 
-#define N 10000000
-//#define N 1000
-#define K 4
+size_t N;
+short int K;
+int T;
 
 void init_vector(struct point point[N]) {
 
@@ -25,7 +26,7 @@ void init_vector(struct point point[N]) {
 
 void init_k_clusters(struct point point[N], struct cluster cluster[K]) {
 
-    size_t i;
+    int i;
 
     for(i = 0; i < K; i++) {
         cluster[i].x = point[i].x;
@@ -35,7 +36,7 @@ void init_k_clusters(struct point point[N], struct cluster cluster[K]) {
 
 bool atribute_sample(int clN[K], struct point point[N], struct cluster cluster[K]) {
     
-    size_t i;
+    int i;
     //short int j;
     /*variáveis que vão guardar elementos dos arrays e structs para evitar acessos à memória*/
     //float pointix, clusterjx, pointiy, clusterjy;
@@ -57,7 +58,7 @@ bool atribute_sample(int clN[K], struct point point[N], struct cluster cluster[K
         cly[i] = 0;
     }
 
-    #pragma omp parallel for reduction (+: clNtmp, clx, cly) schedule(guided)
+    #pragma omp parallel for reduction (+: clNtmp, clx, cly) schedule(guided) num_threads(T)
     for (i = 0; i < N; i++) {
 
         float minor_dist, dist;
@@ -110,9 +111,35 @@ bool atribute_sample(int clN[K], struct point point[N], struct cluster cluster[K
     return end;
 }
 
-int main() {
-    size_t i;
+int main(int argc, char * argv[]) {
 
+    // TODO
+    if (strcmp(argv[0],"make") != 0) {
+
+        if ( strcmp(argv[1], "runseq") != 0 ) T = 1;
+        else if ( strcmp(argv[1], "runpar") != 0  ) T = atoi(getenv("THREADS"));
+        else {
+            printf("Input error!");
+            return 1;
+        }
+
+        N = 10000000;
+        K = atoi(getenv("CP_CLUSTERS"));
+    }
+    else {
+        if (argc < 3 || argc > 4 || strcmp(argv[0],"./k_means") != 0) {
+            printf("Input error!");
+            return 1;
+        }
+
+        N = atoi(argv[1]);
+        K = atoi(argv[2]);
+
+        if ( argc == 3 ) T = 1;
+        else T = atoi(argv[3]);
+    }
+
+    int i;
     struct point * point = malloc(sizeof(struct point) * N);
     struct cluster * cluster = malloc(sizeof(struct cluster) * K);
     int * clN = malloc(sizeof(int) * K);
@@ -130,7 +157,7 @@ int main() {
         if (!end) iterations++;
     }
 
-    printf("N = %d, K = %d\n", N, K);
+    printf("N = %ld, K = %d\n", N, K);
 
     for (i = 0; i < K; i++) {
         printf("Center: (%.3f, %.3f) : Size: %d\n", (double)cluster[i].x, (double)cluster[i].y, clN[i]);
