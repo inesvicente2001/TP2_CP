@@ -113,31 +113,17 @@ bool atribute_sample(int clN[K], struct point point[N], struct cluster cluster[K
 
 int main(int argc, char * argv[]) {
 
-    // TODO
-    if (strcmp(argv[0],"make") != 0) {
 
-        if ( strcmp(argv[1], "runseq") != 0 ) T = 1;
-        else if ( strcmp(argv[1], "runpar") != 0  ) T = atoi(getenv("THREADS"));
-        else {
-            printf("Input error!");
+    if (argc < 3 || argc > 4 || strcmp(argv[0],"./bin/k_means") != 0) {
+            printf("Input error!\n");
             return 1;
-        }
-
-        N = 10000000;
-        K = atoi(getenv("CP_CLUSTERS"));
     }
-    else {
-        if (argc < 3 || argc > 4 || strcmp(argv[0],"./k_means") != 0) {
-            printf("Input error!");
-            return 1;
-        }
 
-        N = atoi(argv[1]);
-        K = atoi(argv[2]);
+    N = atoi(argv[1]);
+    K = atoi(argv[2]);
 
-        if ( argc == 3 ) T = 1;
-        else T = atoi(argv[3]);
-    }
+    if ( argc == 3 ) T = 1;
+    else T = atoi(argv[3]);
 
     int i;
     struct point * point = malloc(sizeof(struct point) * N);

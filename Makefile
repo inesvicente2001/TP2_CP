@@ -3,7 +3,7 @@ BIN = bin/
 SRC = src/
 INCLUDES = include/
 EXEC = k_means
-THREADS = 4
+THREADS = 2
 
 CFLAGS = -O2 -g -Wall -Wextra -Wdouble-promotion -pedantic-errors -Wconversion -ftree-vectorize -fopenmp
 
@@ -24,4 +24,4 @@ runseq:
 	./$(BIN)$(EXEC) 10000000 $(CP_CLUSTERS)
 
 runpar:
-	./$(BIN)$(EXEC) 10000000 $(CP_CLUSTERS) $THREADS
+	./$(BIN)$(EXEC) 10000000 $(CP_CLUSTERS) $(THREADS)
